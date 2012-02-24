@@ -1,0 +1,12 @@
+{application, edflow,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { edflow_app, [edf_slot_db, edf_link]}},
+  {env, []}
+ ]}.
