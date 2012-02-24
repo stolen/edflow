@@ -1,0 +1,37 @@
+Database (if any)
+=================
+   We need to keep processes, their hierarchy, slots and link assignment.
+
+Proccess description:
+    Try to include both unique ids - Erlang pid and path in model.
+
+    {Path, Pid},
+        Path = [Own_name, Parent_path], it is obviously recursive
+            and fits well into lists.
+            Example: Path == [2, valves, engine, car] which means that entity is
+                /car/engine/valves/2, second valve of car's engine
+        Lazy start: if Pid is undefined or invalid, we need to start this worker
+        Future: Make workers die after few seconds of inactivity
+        
+
+Slots: 
+    {Path, Slot, LinkID, Direction}
+        LinkID is attached link or undefined
+Links:
+    I see two ways:
+      * Link is Ref, sending message needs query to DB for acceptors.
+        Hardly compatible with hierarchical link DB as we need to
+        recursively search for acceptors
+      * Link is process, so need to proxy messages. This needs
+        extra hop in message sending but should be OK for prototype
+
+
+So, using global relation registry may be potential bottleneck. 
+    Per-node one doesn't fit good enough for distributed applications.
+    Per-application may not scale well (need to replicate or be slow 
+        because of message latency over network)
+    The last one is hierarchical. It is a bit harder to implement and
+        is a bit slower on tree navigation (needed not often), but
+        scales well and is local-server-call fast.
+
+As we have chosen hierarchical model database, every link is process.
