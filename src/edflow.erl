@@ -1,32 +1,25 @@
 -module(edflow).
+
 -export([parse_transform/2]).
+-export([get_link/2, set_link/3, del_link/2, send_via/3]).
 
-parse_transform(GivenAST, _) ->
-    modhack:patch(io, edf_io_overlay), 
+% Redirect parse_transform
+parse_transform(AST, Options) ->
+    edflow_pt:parse_transform(AST, Options).
 
-    File = find_file(GivenAST),
-    {ok, VanillaAST} = epp:parse_file(File, [], []),
+% edflow API
+get_link(Route, Slot) ->
+    io:format("Getting ~w.~w~n", [Route, Slot]),
+    {link, Slot}.
 
-    FilteredAST = lists:filter(fun not_parse_transform/1, VanillaAST),
-    AST = insert_exports(FilteredAST),
-    io:format("AST: ~p~n", [AST]),
-    AST.
+set_link(Route, Slot, Link) ->
+    io:format("Setting ~w.~w = ~w~n", [Route, Slot, Link]),
+    {set, Slot, Link}.
 
-find_file([{attribute,_,file,{FileName,_}}|_]) ->
-    put(filename, FileName),
-    FileName;
-find_file([_|Tail]) ->
-    find_file(Tail);
-find_file([]) ->
-    undefined.
+del_link(Route, Slot) ->
+    io:format("Deleting ~w.~w~n", [Route, Slot]),
+    {deleted, Slot}.
 
-not_parse_transform({attribute,_,compile,{parse_transform,edflow}}) ->
-    false;
-not_parse_transform(_) ->
-    true.
-
-insert_exports([ModDef = {attribute,_,module,_}|AST]) ->
-    [ModDef, {attribute,0,export,[{handle_message,2}]} | AST];
-insert_exports([Term|AST]) ->
-    [Term | insert_exports(AST)].
-
+send_via(Route, Slot, Message) ->
+    io:format("Sending ~w via ~w.~w~n", [Message, Route, Slot]),
+    Message.
