@@ -18,6 +18,17 @@ filter_tokens([Slot = {atom, Ls, _}, {'?', Lq} | MoreTokens]) ->
     [{atom,Ls,handle_message}, {'(',Ls},
         Slot, {',',Lq}] ++ Destination ++ [{')',Lq} | filter_tokens(EvenMoreTokens)];
 
+% Replace "(slot !:)" with "del_link(slot)"
+filter_tokens([LPar={'(',Llp}, Slot = {atom, _, _}, {'!', _}, {':', _}, RPar={')', _} | MoreTokens]) ->
+    [{atom,Llp,del_link}, LPar, Slot, RPar | filter_tokens(MoreTokens)];
+% Replace "(slot !:" with "set_link(slot,"
+filter_tokens([LPar={'(',Llp}, Slot = {atom, _, _}, {'!', _}, {':', Lc} | MoreTokens]) ->
+    [{atom,Llp,set_link}, LPar, Slot, {',', Lc} | filter_tokens(MoreTokens)];
+
+% Replace "#? slot" with "get_link(slot)"
+filter_tokens([{'#', Lsh}, {'?', Lq}, Slot = {atom, Ls, _} | MoreTokens]) ->
+    [{atom,Lsh,get_link}, {'(', Lq}, Slot, {')', Ls} | filter_tokens(MoreTokens)];
+
 filter_tokens([Token | MoreTokens]) ->
     [Token | filter_tokens(MoreTokens)];
 filter_tokens([]) -> [].
