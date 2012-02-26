@@ -9,8 +9,9 @@ parse_transform(GivenAST, _) ->
 
     FilteredAST = lists:filter(fun not_parse_transform/1, VanillaAST),
     AST_send_fixed = parse_trans:plain_transform(fun replace_send/1, FilteredAST),
+    AST_arity_fixed = parse_trans:plain_transform(fun fix_hm_arity/1, AST_send_fixed),
 
-    AST = add_stuff(AST_send_fixed),
+    AST = add_stuff(AST_arity_fixed),
 
     io:format("AST: ~p~n", [AST]),
     AST.
@@ -35,7 +36,7 @@ not_parse_transform(_) ->
 add_stuff([{attribute,MLn,module,ModName}|AST]) ->
     [
         {attribute,MLn,module,{ModName,['Route']}}, 
-        {attribute,0,export,[{handle_message,2}]} | 
+        {attribute,0,export,[{handle_message,3}]} | 
         api_definitions() 
     ] ++ AST;
 add_stuff([Term|AST]) ->
@@ -79,3 +80,14 @@ replace_send({'op', L, '!', Lhs, Rhs}) ->
 replace_send(_) ->
     continue.
 
+%% Fix handle_message arity:
+%% handle_message(Slot, Message)  ~>  handle_message(Slot, Message, _State)
+fix_hm_arity({function,Lf,handle_message,2,Clauses}) ->
+%[{clause,4, [{atom,4,slot1},{var,4,'X'},{var,4,'State'}],
+    FixedClauses = lists:map(fun fix_hm_clause/1, Clauses),
+    {function,Lf,handle_message,3,FixedClauses};
+fix_hm_arity(_) ->
+    continue.
+
+fix_hm_clause({clause, L, [Slot, Message], Guards, Body}) ->
+    {clause, L, [Slot, Message, {var, L, '_State'}], Guards, Body}.
