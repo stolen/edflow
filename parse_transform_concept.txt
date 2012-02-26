@@ -1,12 +1,10 @@
-
-slot ! Message    =>  send message through slot
+slot ! Message    =>  send message via slot
 (slot !: ID)      =>  set LinkID to slot
 (slot !:)         =>  disconnect slot
 
 
-slot ? Message -> =>replace => handle_packet(slot, Message) ->
-    body,         => (get   =>     body,
-    ok.           =>   msg) =>     ok.
+slot ? Message [, State] [| Guard] ->   
+                  ~>  handle_message(slot, Message [, State]) when Guard ->
 
-                  =>  get LinkID for this slot (for sending) 
+% get LinkID for this slot (for sending link) 
 ID = #? slot      =>    ID = get_link_id(slot)
